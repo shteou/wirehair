@@ -32,6 +32,7 @@
 using namespace cat;
 using namespace wirehair;
 
+#include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -72,6 +73,31 @@ static int GetCheckBlockCount(int block_count)
 	return (int)sqrt((float)block_count) / 2 + 1;
 }
 
+inline static u16 GenerateColumn(u16 x, u16 b, u16 p, u16 a)
+{
+	x = (x + a) % p;
+	if (x >= b) // Fix roll without a loop
+		x = (((u32)a << 16) - p + x) % a;
+
+	return x;
+
+	x = (x+a)%p;
+	if (x < b)
+		return x;
+
+	u16 distance = (p-x);
+
+	if (a < distance)
+		return (((distance+a-1)/a)*a+x)-p;
+
+	distance = x-b+1;
+	a = (p - a);
+
+	if (a < distance)
+		return ((x-((distance+a-1)/a)*a));
+
+	return (x - a);
+}
 
 //// Encoder
 
@@ -203,9 +229,11 @@ void Encoder::PeelAvalanche(u16 column_i, PeelColumn *column)
 				if (--ref_weight <= 0) break;
 
 				// Generate next column
-				ref_column_i = (ref_column_i + ref_a) % _block_next_prime;
+				ref_column_i = GenerateColumn(ref_column_i, _block_count, _block_next_prime, ref_a);
+
+				/*ref_column_i = (ref_column_i + ref_a) % _block_next_prime;
 				if (ref_column_i >= _block_count)	// Fix roll without a loop
-					ref_column_i = (((u32)ref_a << 16) - _block_next_prime + ref_column_i) % ref_a;
+					ref_column_i = (((u32)ref_a << 16) - _block_next_prime + ref_column_i) % ref_a;*/
 			}
 
 			/*
@@ -340,10 +368,19 @@ bool Encoder::PeelSetup()
 			if (--weight <= 0) break;
 
 			// Generate next column
-			column_i = (column_i + a) % _block_next_prime;
-			if (column_i >= _block_count)	// Fix roll without a loop
-				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;
+			column_i = GenerateColumn(column_i, _block_count, _block_next_prime, a);
+
+			/*column_i = (column_i + a) % _block_next_prime;
+			if (column_i >= _block_count) // Fix roll without a loop
+				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;*/
+
+			//std::cout << "column_i (x): " << column_i << " | _block_count (b): " << _block_count
+			//	<< " | _block_next_prime (p): " << _block_next_prime << " | a (a): " << a << std::endl;
+
+			//std::cout << "column_i (x): " << column_i << std::endl;
+
 		}
+		//std::cout << "Block done" << std::endl << std::endl;
 		CAT_IF_DEBUG(cout << endl;)
 
 		// Initialize row state
@@ -682,9 +719,11 @@ void Encoder::FillCompressDeferred()
 			if (--weight <= 0) break;
 
 			// Generate next column
-			column_i = (column_i + a) % _block_next_prime;
+			column_i = GenerateColumn(column_i, _block_count, _block_next_prime, a);
+
+			/*column_i = (column_i + a) % _block_next_prime;
 			if (column_i >= _block_count)	// Fix roll without a loop
-				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;
+				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;*/
 		}
 
 		// Next row
@@ -748,9 +787,11 @@ void Encoder::FillGEDeferred()
 			if (--weight <= 0) break;
 
 			// Generate next column
-			column_i = (column_i + a) % _added_next_prime;
+			column_i = GenerateColumn(column_i, _added_count, _added_next_prime, a);
+
+			/*column_i = (column_i + a) % _added_next_prime;
 			if (column_i >= _added_count)	// Fix roll without a loop
-				column_i = (((u32)a << 16) - _added_next_prime + column_i) % a;
+				column_i = (((u32)a << 16) - _added_next_prime + column_i) % a;*/
 		}
 
 		// Remember which row was deferred into this GE matrix row
@@ -959,9 +1000,11 @@ void Encoder::Compress()
 				if (--weight <= 0) break;
 
 				// Generate next column
-				column_i = (column_i + a) % _block_next_prime;
+				column_i = GenerateColumn(column_i, _block_count, _block_next_prime, a);
+
+				/*column_i = (column_i + a) % _block_next_prime;
 				if (column_i >= _block_count)	// Fix roll without a loop
-					column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;
+					column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;*/
 			}
 
 			// For each mixing column in the row,
@@ -979,9 +1022,11 @@ void Encoder::Compress()
 				if (--weight <= 0) break;
 
 				// Generate next column
-				column_i = (column_i + a) % _added_next_prime;
+				column_i = GenerateColumn(column_i, _added_count, _added_next_prime, a);
+
+				/*column_i = (column_i + a) % _added_next_prime;
 				if (column_i >= _added_count)	// Fix roll without a loop
-					column_i = (((u32)a << 16) - _added_next_prime + column_i) % a;
+					column_i = (((u32)a << 16) - _added_next_prime + column_i) % a;*/
 			}
 		} // end if any rows contain it
 
@@ -1284,9 +1329,11 @@ void Encoder::Substitute()
 			if (--weight <= 0) break;
 
 			// Generate next column
-			column_i = (column_i + a) % _block_next_prime;
+			column_i = GenerateColumn(column_i, _block_count, _block_next_prime, a);
+
+			/*column_i = (column_i + a) % _block_next_prime;
 			if (column_i >= _block_count)	// Fix roll without a loop
-				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;
+				column_i = (((u32)a << 16) - _block_next_prime + column_i) % a;*/
 		}
 
 		// For each mixing column in the row,
@@ -1308,9 +1355,11 @@ void Encoder::Substitute()
 			if (--weight <= 0) break;
 
 			// Generate next column
-			x = (x + a) % _added_next_prime;
+			x = GenerateColumn(x, _added_count, _added_next_prime, a);
+
+			/*x = (x + a) % _added_next_prime;
 			if (x >= _added_count)	// Fix roll without a loop
-				x = (((u32)a << 16) - _added_next_prime + x) % a;
+				x = (((u32)a << 16) - _added_next_prime + x) % a;*/
 		}
 
 		CAT_IF_DEBUG(cout << endl;)
@@ -1642,9 +1691,11 @@ void Encoder::Generate(void *block)
 		--peel_weight;
 
 		// Generate next column
-		peel_x = (peel_x + peel_a) % _block_next_prime;
+		peel_x = GenerateColumn(peel_x, _block_count, _block_next_prime, peel_a);
+
+		/*peel_x = (peel_x + peel_a) % _block_next_prime;
 		if (peel_x >= _block_count)
-			peel_x = (((u32)peel_a << 16) - _block_next_prime + peel_x) % peel_a;
+			peel_x = (((u32)peel_a << 16) - _block_next_prime + peel_x) % peel_a;*/
 
 		CAT_IF_DEBUG(cout << " " << peel_x;)
 
@@ -1655,9 +1706,11 @@ void Encoder::Generate(void *block)
 		while (--peel_weight > 0)
 		{
 			// Generate next column
-			peel_x = (peel_x + peel_a) % _block_next_prime;
+			peel_x = GenerateColumn(peel_x, _block_count, _block_next_prime, peel_a);
+
+			/*peel_x = (peel_x + peel_a) % _block_next_prime;
 			if (peel_x >= _block_count)	// Fix roll without a loop
-				peel_x = (((u32)peel_a << 16) - _block_next_prime + peel_x) % peel_a;
+				peel_x = (((u32)peel_a << 16) - _block_next_prime + peel_x) % peel_a;*/
 
 			CAT_IF_DEBUG(cout << " " << peel_x;)
 
@@ -1680,9 +1733,11 @@ void Encoder::Generate(void *block)
 	while (--mix_weight > 0)
 	{
 		// Generate next column
-		mix_x = (mix_x + mix_a) % _added_next_prime;
+		mix_x = GenerateColumn(mix_x, _added_count, _added_next_prime, mix_a);
+
+		/*mix_x = (mix_x + mix_a) % _added_next_prime;
 		if (mix_x >= _added_count)	// Fix roll without a loop
-			mix_x = (((u32)mix_a << 16) - _added_next_prime + mix_x) % mix_a;
+			mix_x = (((u32)mix_a << 16) - _added_next_prime + mix_x) % mix_a;*/
 
 		CAT_IF_DEBUG(cout << " " << (_block_count + mix_x);)
 
