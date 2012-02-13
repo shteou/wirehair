@@ -73,14 +73,8 @@ static int GetCheckBlockCount(int block_count)
 	return (int)sqrt((float)block_count) / 2 + 1;
 }
 
-inline static u16 GenerateColumn(u16 x, u16 b, u16 p, u16 a)
+CAT_INLINE static u16 GenerateColumn(u16 x, u16 b, u16 p, u16 a)
 {
-	x = (x + a) % p;
-	if (x >= b) // Fix roll without a loop
-		x = (((u32)a << 16) - p + x) % a;
-
-	return x;
-
 	x = (x+a)%p;
 	if (x < b)
 		return x;
