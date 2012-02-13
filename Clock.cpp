@@ -116,7 +116,7 @@ u32 Clock::msec_fast()
 
 	timespec t;
 	clock_gettime(CLOCK_MONOTONIC, &t);
-	return (t.tv_nsec+500)/1000;
+	return t.tv_sec * 1000 + (t.tv_nsec+500000UL)/1000000UL;
 
 #endif
 }
