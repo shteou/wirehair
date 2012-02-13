@@ -24,13 +24,13 @@ int main()
 		message[ii] = ii;
 	}
 
-	for (;;)
+	for (int i=0; i<10000; ++i)
 	{
 		double start = m_clock.usec();
 		bool success = encoder.Initialize(message, message_bytes, 3 + block_bytes);
 		double end = m_clock.usec();
 
-		cout << "main: encoder.Initialize in " << end - start << " usec" << endl;
+		//cout << "main: encoder.Initialize in " << end - start << " usec" << endl;
 
 		if (success)
 		{
@@ -48,7 +48,7 @@ int main()
 				}
 			}
 
-			cin.get();
+			//cin.get();
 		}
 	}
 
